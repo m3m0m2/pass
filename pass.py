@@ -7,6 +7,7 @@ from gs.ss import *
 from gpg import Gpg
 from oauth2client import tools
 import re
+import os
 import os.path
 import getpass
 
@@ -24,20 +25,25 @@ class Pass:
     self.sheet = None
     self.gpg = Gpg(config.gpg_user, config.gpg_passwd)
     self.csv_sep = "\t"
+    self.dir = os.path.dirname(__file__)
 
   # lazy call when needed
   def getSheet(self):
     if self.sheet is None:
-      self.service = GoogleService('Password Manager', self.args).get_service()
+      self.service = GoogleService('Password Manager', self.dir, self.args).get_service()
       self.sheet = GSheet(self.service, self.SPREADSHEET_ID)
     return self.sheet
 
+  def getPasswdFile(self):
+    return os.path.join(self.dir, config.passwd_file)
+
   def syncUp(self):
-    if not os.path.isfile(config.passwd_file):
-      out("Error: cannot open file %s" % config.passwd_file)
+    passwd_file = self.getPasswdFile()
+    if not os.path.isfile(passwd_file):
+      out("Error: cannot open file %s" % passwd_file)
       return
     sarea = SSArea(4,0,self.csv_sep)
-    sarea.loadCsv(config.passwd_file)
+    sarea.loadCsv(passwd_file)
     self.getSheet().setValues(self.grange(),sarea)
     return sarea
 
@@ -48,15 +54,17 @@ class Pass:
     return sarea
 
   def savePasswd(self, sarea):
-    sarea.writeCsv(config.passwd_file)
+    passwd_file = self.getPasswdFile()
+    sarea.writeCsv(passwd_file)
 
   def loadPasswd(self):
     # TODO: check date of latest update and syncDown
-    if not os.path.isfile(config.passwd_file):
+    passwd_file = self.getPasswdFile()
+    if not os.path.isfile(passwd_file):
       sarea = self.syncDown()
     else:
       sarea = SSArea(4,0,self.csv_sep)
-      sarea.loadCsv(config.passwd_file)
+      sarea.loadCsv(passwd_file)
     return sarea
   
   def grange(self):
@@ -96,8 +104,8 @@ class Pass:
 
       show = [row[0], row[1]]
       if self.args.decrypt:
-        passwd = self.gpg.decrypt(row[2])
-        passwd = passwd.decode('string_escape')
+        passwd = row[2].decode('string_escape')
+        passwd = self.gpg.decrypt(passwd)
         show.append(passwd)
       show.append(row[3])
       out("%s" % (tab.join(show),))
@@ -131,7 +139,6 @@ class Pass:
 
     self.savePasswd(sarea)
     self.syncUp()
-
 
   def run(self):
     somethingDone = False

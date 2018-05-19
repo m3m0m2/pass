@@ -1,0 +1,6 @@
+spreadsheet_id = ''
+spreadsheet_tab = ''
+gpg_user = ''
+gpg_passwd = ''
+passwd_file = 'passwd.csv'
+
