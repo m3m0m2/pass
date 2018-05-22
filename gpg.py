@@ -18,7 +18,7 @@ class Gpg:
     return pipe.communicate()[0]
 
   def decrypt(self, text):
-    cmd = ['gpg', '--decrypt', '--quiet', '--passphrase']
+    cmd = ['gpg', '--decrypt', '--quiet', '--batch', '--pinentry-mode', 'loopback', '--passphrase']
     cmd.append(self.passwd)
     pipe = Popen(cmd, stdin=PIPE, stdout=PIPE, close_fds=True)
     pipe.stdin.write(text)

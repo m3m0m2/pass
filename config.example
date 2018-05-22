@@ -3,4 +3,6 @@ spreadsheet_tab = ''
 gpg_user = ''
 gpg_passwd = ''
 passwd_file = 'passwd.csv'
+clipboard_mode == 'tkinter'  # options: xclip, pyperclip, tkinter
+
 

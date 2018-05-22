@@ -10,10 +10,12 @@ import re
 import os
 import os.path
 import getpass
+import clipboard
 
 
 def out(text):
   print("%s" % (text,))
+
 
 
 class Pass:
@@ -56,6 +58,7 @@ class Pass:
   def savePasswd(self, sarea):
     passwd_file = self.getPasswdFile()
     sarea.writeCsv(passwd_file)
+    os.chmod(passwd_file,0600)
 
   def loadPasswd(self):
     # TODO: check date of latest update and syncDown
@@ -106,7 +109,9 @@ class Pass:
       if self.args.decrypt:
         passwd = row[2].decode('string_escape')
         passwd = self.gpg.decrypt(passwd)
-        show.append(passwd)
+        clipboard.copy(passwd)
+        # better to keep hidden
+        show.append('*'*len(passwd))
       show.append(row[3])
       out("%s" % (tab.join(show),))
 
