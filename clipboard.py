@@ -4,7 +4,7 @@ import config
 # Only this works on Ubuntu 18
 def copy_xclip(text):
   import subprocess
-  p = subprocess.Popen(['xclip','-selection','clipboard'], stdin=subprocess.PIPE)
+  p = subprocess.Popen('xclip -i -sel p -f | xclip -i -sel c', stdin=subprocess.PIPE, shell=True)
   p.stdin.write(text)
   p.stdin.close()
   retcode = p.wait()
