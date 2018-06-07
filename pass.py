@@ -74,8 +74,42 @@ class Pass:
     # 'Sheet1!A2:D'
     return GRange(self.SPREADSHEET_TAB, 0, 1, 3).name()
 
+  # modes:
+  # 'AND': all not None regs must match
+  # 'OR': at least one not None regs must match
+  def match(self, row, regs, mode):
+    matches = 0
+    notMatches = 0
 
-  def search(self, reg0=None, reg1=None, reg3=None):
+    if len(row[0]) == 0:
+      return False
+    if regs[0] is not None:
+      m = re.search(regs[0], row[0])
+      if m:
+        matches += 1
+      else:
+        notMatches += 1
+    if regs[1] is not None:
+      m = re.search(regs[1], row[1])
+      if m:
+        matches += 1
+      else:
+        notMatches += 1
+    if regs[2] is not None:
+      m = re.search(regs[2], row[3])
+      if m:
+        matches += 1
+      else:
+        notMatches += 1
+    if mode == 'AND':
+      return notMatches == 0
+    if mode == 'OR':
+      return matches > 0
+    return False
+
+    
+
+  def search(self, reg0=None, reg1=None, reg3=None, mode='AND'):
     tab="\t"
     sarea = self.loadPasswd()
 
@@ -90,20 +124,8 @@ class Pass:
 
     out("%s" % (tab.join(header),))
     for row in sarea:
-      if len(row[0]) == 0:
+      if not self.match(row, [reg0, reg1, reg3], mode):
         continue
-      if reg0 is not None:
-        m = re.search(reg0, row[0])
-        if not m:
-          continue
-      if reg1 is not None:
-        m = re.search(reg1, row[1])
-        if not m:
-          continue
-      if reg3 is not None:
-        m = re.search(reg3, row[3])
-        if not m:
-          continue
 
       show = [row[0], row[1]]
       if self.args.decrypt:
@@ -156,8 +178,14 @@ class Pass:
       self.syncDown()
       somethingDone = True
 
+    search_mode = 'AND'
+    if self.args.find:
+      self.args.find_site = self.args.find
+      self.args.find_user = self.args.find
+      self.args.find_note = self.args.find
+      search_mode = 'OR'
     if self.args.find_site or self.args.find_user or self.args.find_note:
-      self.search(self.args.find_site, self.args.find_user, self.args.find_note)
+      self.search(self.args.find_site, self.args.find_user, self.args.find_note, search_mode)
     elif self.args.list:
       self.search()
     elif self.args.update:
@@ -173,6 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('-sid', nargs='?', default=config.spreadsheet_id, help='spreadsheet id')
     parser.add_argument('-tab', nargs='?', default=config.spreadsheet_tab, help='spreadsheet tab')
     parser.add_argument('-l', '--list', action='store_true', default=False, help='list')
+    parser.add_argument('-f', '--find', nargs='?', default=None, help='search by site,user or note')
     parser.add_argument('-fs', '--find-site', nargs='?', default=None, help='search by site')
     parser.add_argument('-fu', '--find-user', nargs='?', default=None, help='search by user')
     parser.add_argument('-fn', '--find-note', nargs='?', default=None, help='search by note')
