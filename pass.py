@@ -47,6 +47,7 @@ class Pass:
     sarea = SSArea(4,0,self.csv_sep)
     sarea.loadCsv(passwd_file)
     self.getSheet().setValues(self.grange(),sarea)
+    self.getSheet().execute()
     return sarea
 
   def syncDown(self):
@@ -145,8 +146,8 @@ class Pass:
     passwd = self.gpg.encrypt(passwd)
     passwd = passwd.encode('string_escape')
     note = raw_input('Notes: ')
-    save = raw_input('Save? [y/n]: ')
-    if not save.lower() == 'y':
+    save = raw_input('Save? [Y/n]: ')
+    if len(save) > 0 and not save.lower() == 'y':
       return
     if len(site) == 0:
       out('Error: empty site')
