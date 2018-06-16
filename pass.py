@@ -17,6 +17,22 @@ def out(text):
   print("%s" % (text,))
 
 
+# returns True for yes
+def prompt_yn(text, defaultYes):
+  if defaultYes:
+    text += ' [Y/n]'
+  else:
+    text += ' [y/N]'
+  text += ': '
+
+  response = raw_input(text)
+
+  if response.lower() == 'y' or response.lower() == 'yes':
+    return True
+  if response.lower() == 'n' or response.lower() == 'no':
+    return False
+  return defaultYes
+
 
 class Pass:
   def __init__(self, args):
@@ -142,15 +158,15 @@ class Pass:
     updating = False
     site = self.args.update[0]
     user = self.args.update[1]
+    if len(site) == 0:
+      out('Error: empty site')
+      return
+
     passwd = getpass.getpass()
     passwd = self.gpg.encrypt(passwd)
     passwd = passwd.encode('string_escape')
     note = raw_input('Notes: ')
-    save = raw_input('Save? [Y/n]: ')
-    if len(save) > 0 and not save.lower() == 'y':
-      return
-    if len(site) == 0:
-      out('Error: empty site')
+    if not prompt_yn('Save?', True):
       return
 
     sarea = self.syncDown()
@@ -167,6 +183,28 @@ class Pass:
 
     self.savePasswd(sarea)
     self.syncUp()
+
+  def rm(self, site):
+    sarea = self.loadPasswd()
+
+    if sarea.rows == 0:
+      out('No data found.')
+      return
+
+    for row in sarea:
+      if not self.match(row, [site, None, None], 'AND'):
+        continue
+
+      text = 'Remove site %s %s?' % (row[0],row[1])
+      if prompt_yn(text, False):
+        row[0] = ''
+        row[1] = ''
+        row[2] = ''
+        row[3] = ''
+
+    self.savePasswd(sarea)
+    self.syncUp()
+    
 
   def run(self):
     somethingDone = False
@@ -191,6 +229,8 @@ class Pass:
       self.search()
     elif self.args.update:
       self.update()
+    elif self.args.rm_site:
+      self.rm(self.args.rm_site)
     else:
       return somethingDone
     return True
@@ -207,6 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('-fu', '--find-user', nargs='?', default=None, help='search by user')
     parser.add_argument('-fn', '--find-note', nargs='?', default=None, help='search by note')
     parser.add_argument('-u', '--update', nargs=2, default=None, help='update: <site> <user>')
+    parser.add_argument('-rs', '--rm-site', nargs='?', default=None, help='remove site')
     parser.add_argument('-d', '--decrypt', action='store_true', default=False, help='decrypt')
     parser.add_argument('-ds', '--down-sync', action='store_true', default=False, help='down sync')
     parser.add_argument('-us', '--up-sync', action='store_true', default=False, help='up sync')
